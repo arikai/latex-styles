@@ -1,20 +1,91 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{itmo-student-thesis}[2019/04/23 v1.3.rc2]
 
-\LoadClass[14pt,a4paper]{extreport}
+%% ВКР должен оформлятся в соответствии с определёнными стандартами (ГОСТами)
 
-%% Russian language in UTF-8
+%% Их выжимка:
+%% https://studfiles.net/preview/2547719/
 
-\RequirePackage[utf8]{inputenc}
-\RequirePackage[T2A]{fontenc}
-\RequirePackage[english,german,russian]{babel}
+%% Соответствующие ГОСТы:
+%% 1. Диссертация и автореферат диссертации (ГОСТ Р 7.0.11-2011)
+%% http://docs.cntd.ru/document/gost-r-7-0-11-2011
+%% 2. Отчёт о НИР (ГОСТ 7.32-2001)
+%% http://docs.cntd.ru/document/gost-7-32-2001-sibid
+%% 3. Библиографическая запись. Библиографическое описание электронных ресурсов (ГОСТ 7.82-2001)
+%% http://docs.cntd.ru/document/1200025968
+%% 4. Библиографическая запись. Библиографическое описание (ГОСТ 7.1-2003)
+%% http://docs.cntd.ru/document/1200034383
+%% 5. Библиографическая ссылка (ГОСТ Р 7.0.5-2008)
+%% http://docs.cntd.ru/document/gost-r-7-0-5-2008
+
+\LoadClass[14pt, a4paper]{extreport}
+
+%% Обработка опций пакета:
+%% В XeLaTeX некоторые пакеты имеют аналоги, и стоит подключать именно их. Например:
+%% Вместо классического babel для поддержки языков, отличных от английского, необходимо использовать пакет polyglossia
+%% По этой причине обработка опций должна происходить как можно раньше,
+%% чтобы выбрать пакеты, в зависимости от используемого компилятора
+
+\newif\if@shouldusexelatex
+\newif\if@shouldusepscyr
+\newif\if@shouldmakespecification
+\newif\if@shouldmakeannotation
+\newif\if@shouldusexelatex
+\newif\if@shouldsourcesbyhand
+
+\DeclareOption{times}{\@shouldusexelatextrue}
+\DeclareOption{pscyr}{\@shouldusepscyrtrue}
+\DeclareOption{specification}{\@shouldmakespecificationtrue}
+\DeclareOption{annotation}{\@shouldmakeannotationtrue}
+
+\ProcessOptions
+
+\if@shouldusexelatex
+    %% Настраиваем языки: в xelatex необходимо использовать пакет polyglossia, а не babel
+    \RequirePackage{polyglossia}
+    \setdefaultlanguage{russian}
+    \setotherlanguage{english}
+    \setotherlanguage{german}
+    \PolyglossiaSetup{russian}{indentfirst=true}
+    \enablehyphenation
+
+    %% Настраиваем шрифты
+    \RequirePackage{fontspec}
+    \defaultfontfeatures{Ligatures={TeX},Renderer=Basic}
+    \setmainfont[Ligatures={TeX,Historic}]{Times New Roman}
+    \setsansfont{Arial}
+    \setmonofont{Courier New}
+
+    %% Шрифты для русского языка необходимо определить явно: при непонятных условиях polyglossia может не использовать дефолтные шрифты, установленные выше
+    \newfontfamily{\cyrillicfont}{Times New Roman}
+    \newfontfamily{\cyrillicfontrm}{Times New Roman}
+    \newfontfamily{\cyrillicfontsf}{Arial}
+    \newfontfamily{\cyrillicfonttt}{Courier New}
+
+\else
+    %% Language setup
+    \RequirePackage[utf8]{inputenc} % Используем кодировку UTF-8 (XeLaTeX - utf8-based движок, поэтому пакет не нужен)
+    \RequirePackage[T2A]{fontenc}
+    \RequirePackage[english,german,russian]{babel}
+
+    \if@shouldusepscyr
+        \RequirePackage{pscyr}
+	    \def\rmdefault{ftm}
+    \else
+        \RequirePackage{paratype}
+    \fi
+\fi
+
 \RequirePackage{csquotes}
 
 %% Теперь можно писать по-русски.
 
 %% Формируем отступы
 
-\RequirePackage[top=2cm, bottom=2cm, left=2.7cm, right=1.5cm]{geometry}
+%% ГОСТ 7.32-2001
+% \RequirePackage[top=2cm, bottom=2cm, left=2.7cm, right=1.5cm]{geometry}
+%%
+\RequirePackage[top=2cm, bottom=2cm, left=3cm, right=1.5cm]{geometry}
 
 %% Эти пакеты слишком часто используются, чтобы их не включать
 
@@ -33,6 +104,13 @@
 %% Этот пакет используется для некоторых таблиц и других визуальных элементов.
 
 \RequirePackage{tabularx}
+
+%% Определим X-подобные колонки с разным выравниванием
+\newcolumntype{Q}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}} \newcolumntype{W}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{E}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+\newcolumntype{R}{>{\raggedleft\arraybackslash}X}
 
 %% Расположение номеров страниц - как и в диссертации.
 
@@ -54,6 +132,9 @@
 \RequirePackage{algorithmicx}
 \RequirePackage{algpseudocode}
 
+%% Позволяет указывать H в параметрах figure и float для точного положения картинки среди текста при компиляции
+\RequirePackage{float}
+
 %% Перечисления по умолчанию слишком разрежены.
 
 \RequirePackage{enumitem}
@@ -69,7 +150,8 @@
 
 %% Не используем буллеты.
 
-\renewcommand\labelitemi{---}
+% \renewcommand\labelitemi{-~~}
+\renewcommand\labelitemi{•~~}
 
 %% На первом уровне нумерованных списков ставим русские буквы, на втором - цифры.
 
@@ -109,7 +191,7 @@
 \\\hline #4 \\\hline \endfirsthead
 \multicolumn{#5}{r}{\normalsizeПродолжение таблицы \thetable{}} \\\hline #4 \endhead
 }{\end{longtable}}
-                    
+
 %% Библиография по ГОСТу. Используем только бибер.
 
 \RequirePackage[
@@ -235,9 +317,10 @@
 
 %% Листинги, по умолчанию - Java
 
-\RequirePackage{listings}
 \definecolor{darkblue}{rgb}{0,0,0.5}
 \definecolor{darkgreen}{rgb}{0,0.5,0}
+
+\RequirePackage{listings}
 
 \lstset{
     language=Java,
@@ -248,7 +331,7 @@
     stringstyle=\color{darkgreen},
     breaklines=true,
     showstringspaces=false,
-    basicstyle=\small
+    basicstyle=\ttfamily\small  % Use small courier font
 }
 
 %% Все флоаты нумеруем глобально. Формулы - тоже.
@@ -269,7 +352,7 @@
   \counterwithout{lstlisting}{section}
   \counterwithout{lstlisting}{subsection}
 }
-     
+
 
 %% "Тонкая" настройка теховских штрафов при формировании абзацев.
 
@@ -404,7 +487,19 @@
 \newcommand{\internetsources}{\ifthenelse{\equal{\totvalue{c@internetsources}}{0}}{нет}{да, число ресурсов: \total{c@internetsources}}}
 
 %%% Команды для начала и конца секции с обзором
-\newcommand{\startrelatedwork}{\newrefsegment}
+\newcommand{\startrelatedwork}{
+  \addtocontents{toc}{\setcounter{tocdepth}{1}}
+  \newrefsegment
+
+  %% И содержании
+%%   \titlecontents{chapter}
+%%                 [\appendixPrefix]
+%%                 {\begin{MakeUppercase}}
+%%                 {\contentslabel[ГЛАВА~\thecontentslabel.]{\the\appendixPrefix}}
+%%                 {\hspace*{-\the\appendixPrefix}}
+%%                 {\titlerule*[0.5pc]{.}\contentspage}
+%%                 [\end{MakeUppercase}]
+}
 \newcommand{\finishrelatedwork}{\@countsourceswhere{segment=\arabic{refsegment}}{c@relatedworksourcecount}\endrefsegment}
 
 %% Делаем русские варианты знаков неравенств.
@@ -424,6 +519,8 @@
 \RequirePackage{titletoc}
 
 \setcounter{secnumdepth}{3}
+
+%% Зададим формат заголовков в тексте
 \titleformat{\chapter}[block]{\normalsize\bfseries\center}{ГЛАВА~\thechapter.~}%
 {0pt}{\begin{MakeUppercase}}[\end{MakeUppercase}\thispagestyle{\TheOnlyTruePageStyle}]
 \titlespacing{\chapter}{0pt}{-30pt}{0pt}
@@ -433,6 +530,7 @@
 \titlespacing{\subsection}{0pt}{0pt}{0pt}
 \titleformat{\subsubsection}[block]{\normalsize\bfseries\center}{\thesubsubsection.~}{0pt}{}
 \titlespacing{\subsubsection}{0pt}{0pt}{0pt}
+
 
 %% \appendix начинает приложения, которые должны правильно именоваться.
 
@@ -488,6 +586,9 @@
     {\contentslabel[\thecontentslabel.]{\chapterW}}
     {\hspace*{-\chapterW}}
     {\titlerule*[0.5pc]{.}\contentspage}
+    %% {\contentslabel[ГЛАВА \thecontentslabel.]{\chapterW}}
+    %% {\contentslabel[ГЛАВА \MakeUppercase{\thecontentslabel}.]{\chapterW}}
+
 \titlecontents{section}
     [\sectionPrefix]
     {}
@@ -513,10 +614,12 @@
 
 %% ...отдельным пунктом - введение и заключение
 
-\newcommand{\startprefacepage}{%
-\chapter*{ВВЕДЕНИЕ}\label{chapter:introduction}%
-\addcontentsline{toc}{chapter}{ВВЕДЕНИЕ}}
-\newcommand{\startconclusionpage}{%
+\newcommand{\startprefacepage}{
+  \chapter*{ВВЕДЕНИЕ}\label{chapter:introduction}
+  \addcontentsline{toc}{chapter}{ВВЕДЕНИЕ}
+  \addtocontents{toc}{\setcounter{tocdepth}{0}} % Keep sectioning, but do not export to TOC
+}
+\newcommand{\startconclusionpage}{
 \chapter*{ЗАКЛЮЧЕНИЕ}\label{chapter:conclusion}%
 \addcontentsline{toc}{chapter}{ЗАКЛЮЧЕНИЕ}}
 
@@ -534,6 +637,20 @@
 
 %% Контентные команды со значениями по умолчанию
 
+%% TODO: use csname to make macro for commands
+%% The closest I found: https://tex.stackexchange.com/questions/145420/dynamically-define-commands
+\newcommand{\MkVec}[1]{\expandafter\def\csname#1\endcsname{\vec{#1}}}
+
+%% Smth like that would be nice
+%% \makecommand{\specialty}{Default value}
+%% or at least
+%% \makecommand{\specialty}{\thespecialty}{Default value}
+%% \newcommand{\makecommand}[3]{
+%%   \newcommand{#2}{#3}
+%%   \newcommand{#1}[1]{\renewcommand{#2}{##1}}
+%%   }
+
+
 \newcommand{\theuniversity}{{\small\bfseries Министерство науки и высшего образования Российской Федерации\par
 \MakeUppercase{\scriptsize федеральное государственное автономное образовательное учреждение высшего образования}\par
 \begin{singlespace}\MakeUppercase{<<Санкт-Петербургский национальный исследовательский университет информационных технологий,}\par\MakeUppercase{механики и оптики>>}\end{singlespace}}}
@@ -545,18 +662,36 @@
 \newcommand{\thefaculty}{ИТиП}
 \newcommand{\faculty}[1]{\renewcommand{\thefaculty}{#1}}
 
-\newcommand{\specialty}[1]{\newcommand{\thespecialty}{#1}}
+%% Бакалавр или Магистр
+\newcommand{\thequalification}{Бакалавр}
+\newcommand{\qualification}[1]{\renewcommand{\thequalification}{#1}}
 
-\newcommand{\specialization}[1]{\newcommand{\thespecialization}{#1}}
+%% Направленность
+\newcommand{\thespecialty}{Вычислительные машины, комплексы, системы и сети}
+\newcommand{\specialty}[1]{\renewcommand{\thespecialty}{#1}}
 
+%% Направление подготовки (специальность)
+\newcommand{\thespecialization}{09.03.01. - Вычислительные машины, комплексы, системы и сети} \newcommand{\specialization}[1]{\renewcommand{\thespecialization}{#1}}
+
+%% Название образовательной программы
 \newcommand{\thechair}{компьютерных технологий}
-\newcommand{\chair}[1]{\renewcommand{\thechair}{#1}}
+%% \newcommand{\chair}[1]{\renewcommand{\thechair}{#1}}
 
+%% Декан
 \newcommand{\thechairhead}{Парфенов В.Г.}
-\newcommand{\thechairheaddegree}{проф., д.т.н.}
-\newcommand{\chairhead}[2]{\renewcommand{\thechairhead}{#1}
-                           \renewcommand{\thechairheaddegree}{#2}}
+%% \newcommand{\chairhead}[1]{\renewcommand{\thechairhead}{#1}}
 
+%% Звание декана
+\newcommand{\thechairheaddegree}{проф., д.т.н.}
+%% \newcommand{\chairheaddegree}[1]{\renewcommand{\thechairheaddegree}{#1}}
+
+\newcommand{\chair}[3]{
+  \renewcommand{\thechair}{#1}
+  \renewcommand{\thechairhead}{#2}
+  \renewcommand{\thechairheaddegree}{#3}
+  }
+
+%% Город
 \newcommand{\thecity}{Санкт-Петербург}
 \newcommand{\city}[1]{\renewcommand{\thecity}{#1}}
 
@@ -564,7 +699,6 @@
 \newcommand{\theplannedgraphics}{Графические материалы и чертежи работой не предусмотрены}
 \newcommand{\plannedgraphics}[1]{\renewcommand{\theplannedgraphics}{#1}}
 
-%%% Даты
 \newcommand{\thestartdate}{\unknowndate}
 \newcommand{\startdate}[3]{\renewcommand{\thestartdate}{<<#1>>~#2~#3~г.}}
 \newcommand{\thefinishdate}{\unknowndate}
@@ -576,14 +710,18 @@
 
 \newcommand{\studygroup}[1]{\newcommand{\thestudygroup}{#1}}
 \renewcommand{\title}[1]{\newcommand{\thetitle}{#1}}
-\renewcommand{\author}[2]{\providecommand{\theauthor}{~}  % some distributions have it, some not
+
+\providecommand{\theauthor}{~}  % some distributions have it, some not
+\renewcommand{\author}[2]{
                           \renewcommand{\theauthor}{#1}
                           \newcommand{\theauthorshort}{#2}}
+
 \newcommand{\supervisor}[4]{\newcommand{\thesupervisor}{#1}
                             \newcommand{\thesupervisorshort}{#2}
                             \newcommand{\thesupervisordegree}{#3}
                             \newcommand{\thesupervisorwork}{#4}}
-\newcommand{\publishyear}[1]{\newcommand{\theyear}{#1}}
+\newcommand{\theyear}{\the\year}
+\newcommand{\publishyear}[1]{\renewcommand{\theyear}{#1}}
 \newcommand{\secretary}[1]{\newcommand{\thesecretary}{#1}}
 
 %%% Техническое задание и исходные данные к работе
@@ -602,6 +740,15 @@
 \newcommand{\researchfunding}[1]{\newcommand{\theresearchfunding}{#1}}
 %%% Наличие публикаций и выступлений на конференциях
 \newcommand{\researchpublications}[1]{\newcommand{\theresearchpublications}{#1}}
+%%% Оригинальность работы (после проверки на антиплагиат)
+\newcommand{\theoriginality}{\uhspace{5ex}}
+\newcommand{\originality}[1]{\renewcommand{\theoriginality}{#1}}
+
+\newcommand{\thepagestotal}{\infiniteuhspace}
+\newcommand{\pagestotal}[1]{\renewcommand{\thepagestotal}{#1}}
+
+\newcommand{\theslidecount}{\infiniteuhspace}
+\newcommand{\slidecount}[1]{\renewcommand{\theslidecount}{#1}}
 
 %% Контентные команды пополнения списков
 
@@ -620,20 +767,7 @@
 
 %% Создание титульной страницы, задания и аннотации
 
-%%% Параметр: Бакалавр/Магистр
-\renewcommand{\maketitle}[1]{
-    \ifstrequal{#1}{Магистр}{
-        \providecommand{\thespecialization}{Технологии разработки программного обеспечения}
-        \providecommand{\thespecialty}{01.04.02~Прикладная математика и информатика}
-    }{
-        \ifstrequal{#1}{Бакалавр}{
-            \providecommand{\thespecialization}{Математические модели и алгоритмы в разработке программного обеспечения}
-            \providecommand{\thespecialty}{01.03.02~Прикладная математика и информатика}
-        }{
-            \ClassError{Unknown maketitle argument: #1, expected Магистр or Бакалавр}
-        }
-    }
-
+\renewcommand{\maketitle}{
 	\pagenumbering{gobble}
     \begin{titlepage}
         \banhyphens
@@ -648,10 +782,10 @@
             & Автор: \theauthor \hfilll \signatureplace \\
             & Направление подготовки:\;
                 \begin{minipage}[t]{0.4\textwidth}\begin{flushleft}\thespecialty\end{flushleft}\end{minipage} \\
-            & Квалификация: #1 \\
+            & Квалификация: \thequalification \\
             & Руководитель: \thesupervisorshort, \thesupervisordegree~ \hfilll \signatureplace \\
             & \textbf{К защите допустить} \\
-            & Руководитель ОП \thechairhead, \thechairheaddegree~ \hfilll \signatureplace \\
+            & Руководитель ОП: \thechairhead, \thechairheaddegree~ \hfilll \signatureplace \\
         \end{tabularx}\par}
         \begin{flushright}\unknowndate\end{flushright}
         \vspace{0cm plus 1fill minus 0cm}
@@ -667,12 +801,12 @@
             \begin{enumerate}\thelistofconsultants\end{enumerate}\par
         }{}\bigskip\par\bigskip\par
         \noindent ВКР принята \unknowndate\par\bigskip\par
-        \noindent Оригинальность ВКР \uhspace{5ex}\%\par\bigskip\par
+        \noindent Оригинальность ВКР \theoriginality\%\par\bigskip\par
         \noindent ВКР выполнена с оценкой \infiniteuhspace\par\bigskip\par
         \noindent Дата защиты \unknowndate\par\bigskip\par
         \noindent Секретарь ГЭК~\thesecretary\hfill\signatureplace\par\bigskip\par
-        \noindent Листов хранения \infiniteuhspace\par\bigskip\par
-        \noindent Демонстрационных материалов/Чертежей хранения \infiniteuhspace\par\bigskip\par
+        \noindent Листов хранения \thepagestotal\par\bigskip\par
+        \noindent Демонстрационных материалов/Чертежей хранения \theslidecount\par\bigskip\par
     \end{titlepage}
     \if@shouldmakespecification
     \begin{titlepage}
@@ -687,21 +821,21 @@
         \bigskip
         \begin{center}\bfseries {\normalsize ЗАДАНИЕ} \\ НА ВЫПУСКНУЮ КВАЛИФИКАЦИОННУЮ РАБОТУ\end{center}
         \bigskip
-        \begingroup\banhyphens
+        \begingroup
+        \banhyphens
         \noindent \textbf{Студент}~\theauthorshort\;\hfilll \textbf{Группа}~\thestudygroup\; \textbf{Факультет}~\thefaculty\;\par
         \noindent \textbf{Руководитель}~\thesupervisorshort, \thesupervisordegree, \thesupervisorwork\par
         \noindent \textbf{1 Наименование темы:} \thetitle\par
         \noindent \textbf{Направление подготовки (специальность):} \thespecialty\par
         \noindent \textbf{Направленность (профиль):} \thespecialization\par
-        \noindent \textbf{Квалификация:} #1\par
+        \noindent \textbf{Квалификация:} \thequalification\par
         \endgroup
         \noindent \textbf{2 Срок сдачи студентом законченной работы:} \thefinishdate \par
         \noindent \textbf{3 Техническое задание и исходные данные к работе}\par \thetechnicalspec\par
-        \pagebreak[3]
         \noindent \textbf{4 Содержание выпускной работы (перечень подлежащих разработке вопросов)}\par \theplannedcontents\par
         \pagebreak[3]
         \noindent \textbf{5 Перечень графического материала (с указанием обязательного материала)}\par \theplannedgraphics\par
-        \pagebreak[3]
+        %% \pagebreak[3]
         \noindent \textbf{6 Исходные материалы и пособия}\par \theplannedsources\par
         \pagebreak[3]
         \noindent \textbf{7 Дата выдачи задания} \thestartdate\par\bigskip\par
@@ -813,25 +947,31 @@
 \DeclareGraphicsRule{.20}{mps}{*}{}
 \fi
 
-%% Обработка опций пакета
+% \RequirePackage{minted}
+% \setminted{
+%     style=colorful,
+%     autogobble=true, % trim leading spaces
+%     breakanywhere=true,
+%     breakautoindent=true,
+%     breaklines=true,
+%     breaksymbol=> ,
+%     breaksymbolindent=2em,
+%     breaksymbolright= \textbackslash{},
+%     breaksymbolindentright=2em,
+%     encoding=utf-8,
+%     fontfamily=tt,
+%     fontsize=\footnotesize,
+%     framesep=5em,
+%     numbersep=2em,
+%     python3=true
+% }
 
-\newif\if@shouldusexelatex
-\newif\if@shouldmakespecification
-\newif\if@shouldmakeannotation
-\newif\if@shouldsourcesbyhand
-
-\DeclareOption{times}{\@shouldusexelatextrue}
-\DeclareOption{specification}{\@shouldmakespecificationtrue}
-\DeclareOption{annotation}{\@shouldmakeannotationtrue}
-
-\ProcessOptions
-
-\if@shouldusexelatex
-    \RequirePackage{fontspec}
-    \defaultfontfeatures{Ligatures={TeX},Renderer=Basic}
-    \setmainfont[Ligatures={TeX,Historic}]{Times New Roman}
-    \setsansfont{Arial}
-    \setmonofont{Courier New}
-\else
-    \RequirePackage{paratype}
-\fi	
+%\newcommand{\src}[2]{
+%  \inputminted[
+%    frame=lines,
+%    framesep=1em,
+%    framerule=0.25mm,
+%    label=#2,
+%    labelposition=topline
+%  ]{#1}{#2}
+%}
